@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家族のお風呂管理</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #eef2f3; padding-top: 20px; }
+        .container { display: flex; flex-direction: column; align-items: center; }
+        .card { 
+            background: white; border-radius: 12px; padding: 15px; margin: 10px;
+            width: 250px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .name { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; }
+        .status { margin-bottom: 15px; color: #666; }
+        button { 
+            border: none; padding: 10px 20px; border-radius: 20px; 
+            color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-off { background-color: #3498db; } /* 空き用（青） */
+        .btn-on { background-color: #e74c3c; }  /* 入浴中用（赤） */
+    </style>
+</head>
+<body>
+    <h1>🛁 お風呂管理アプリ</h1>
+    <div id="member-list" class="container"></div>
+
+    <script src="Family.js"></script>
+</body>
+</html>
