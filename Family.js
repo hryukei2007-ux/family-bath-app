@@ -57,39 +57,37 @@ function startSync() {
 // お風呂状態の切り替え
 function toggleBath(name, currentStatus) {
     const newStatus = !currentStatus;
-    
-    // Firebaseを更新
+
+    // 1. まず先にLINE通知を投げる（Firebaseを待たずに実行）
+    sendToYoom(name, newStatus);
+
+    // 2. そのあとFirebaseを更新
     database.ref('bathStatus/' + name).set(newStatus)
         .then(() => {
-            console.log("Firebase更新成功:", name, newStatus);
-            // Firebaseの更新が終わったら通知を飛ばす
-            sendToYoom(name, newStatus);
+            console.log("Firebase更新完了");
         })
         .catch((error) => {
-            console.error("Firebase更新エラー:", error);
+            console.error("Firebaseエラー:", error);
         });
 }
 
 // YOOM（LINE）通知
 function sendToYoom(name, isEntering) {
     const yoomUrl = "https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q"; 
-    const messageText = `${isEntering ? "【入浴開始】" : "【お風呂あがり】"}\n${name} がお風呂 ${isEntering ? "入りました" : "あがりました"}！ ${isEntering ? "🛀" : "✨"}`;
+    
+    // YOOMが受け取りやすいシンプルなデータ形式に整理
+    const payload = {
+        name: name,
+        status: isEntering ? "入りました" : "あがりました",
+        message: `${name}がお風呂に${isEntering ? "入りました🛀" : "あがりました✨"}`
+    };
 
-    // mode: 'no-cors' を外して送信
+    // fetchのオプションから複雑なものを外して、とにかく「送る」ことに集中
     fetch(yoomUrl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            name: name, 
-            message: messageText 
-        })
+        // あえて headers を最小限にするか、外すと通る場合があります
+        body: JSON.stringify(payload)
     })
-    .then(response => {
-        console.log("YOOM通知を送信しました");
-    })
-    .catch(e => {
-        console.error("通知エラー:", e);
-    });
+    .then(() => console.log("通知リクエスト送信完了"))
+    .catch(e => console.error("通知送信失敗:", e));
 }
