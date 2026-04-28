@@ -130,4 +130,3 @@ function sendToYoom(name, isEntering) {
         console.error("送信自体に失敗:", e);
     });
 }
-}
