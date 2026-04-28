@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家族のお風呂管理</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #eef2f3; padding: 20px; }
+        .container { display: flex; flex-direction: column; align-items: center; }
+        
+        .card { 
+            background: white; border-radius: 12px; padding: 20px; margin: 10px;
+            width: 280px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 4px solid transparent; transition: 0.3s;
+        }
+        
+        /* 入浴中の人を「誰が見てもわかる」ように強調 */
+        .card.in-bath { border-color: #e74c3c; background-color: #fff5f5; transform: scale(1.05); }
+        .card.locked { opacity: 0.5; } /* ロックされた他人のカードは半透明に */
+
+        .name { font-size: 1.4em; font-weight: bold; margin-bottom: 5px; }
+        .status-text { margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
+        
+        button { 
+            border: none; padding: 15px 25px; border-radius: 30px; 
+            color: white; font-weight: bold; cursor: pointer; width: 100%;
+            font-size: 1.1em; transition: 0.2s;
+        }
+
+        .btn-entry { background-color: #4CAF50; } /* 緑：空き */
+        .btn-exit { background-color: #e74c3c; }  /* 赤：あがる */
+        
+        /* ロック時の見た目：完全にグレーアウト */
+        button:disabled { 
+            background-color: #777 !important; 
+            cursor: not-allowed; 
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🛁 お風呂管理アプリ</h1>
+    <div id="alert-banner" style="color: #e74c3c; font-weight: bold; margin-bottom: 10px; height: 24px;"></div>
+    
+    <div id="member-list" class="container"></div>
+
+    <script>
+        const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
+        let currentBather = null; // 入浴中の名前を保存。nullなら誰もいない。
+
+        const memberListDiv = document.getElementById('member-list');
+        const alertBanner = document.getElementById('alert-banner');
+
+        function updateDisplay() {
+            memberListDiv.innerHTML = ""; 
+            const anyoneIn = (currentBather !== null); // 誰かが入っているか
+
+            // バナーの表示
+            alertBanner.innerText = anyoneIn ? `⚠️ ${currentBather}さんが入浴中です` : "✨ 今ならすぐに入れます";
+
+            familyMembers.forEach(name => {
+                const isInBath = (currentBather === name); 
+                // ロック条件：
+                // 1. 誰も入っていない → 全員押せる
+                // 2. 誰かが入っている → 「入っている本人」以外は全員ロック（disabled）
+                const canPress = !anyoneIn || isInBath;
+
+                const card = document.createElement('div');
+                card.className = `card ${isInBath ? 'in-bath' : (anyoneIn ? 'locked' : '')}`;
+                
+                card.innerHTML = `
+                    <div class="name">${name}</div>
+                    <div class="status-text" style="color: ${isInBath ? '#e74c3c' : '#666'}">
+                        ${isInBath ? '🛀 入浴中' : '✨ 空室'}
+                    </div>
+                    <button 
+                        class="${isInBath ? 'btn-exit' : 'btn-entry'}" 
+                        onclick="handleAction('${name}')"
+                        ${canPress ? '' : 'disabled'}
+                    >
+                        ${isInBath ? 'あがった！' : (anyoneIn ? '入浴制限中' : 'お風呂に入る')}
+                    </button>
+                `;
+                memberListDiv.appendChild(card);
+            });
+        }
+
+        function handleAction(name) {
+            // 二重チェック：もし万が一ロックをすり抜けて押しても、誰かいたら無視する
+            if (currentBather !== null && currentBather !== name) return;
+
+            const isExiting = (currentBather === name);
+            
+            if (isExiting) {
+                currentBather = null; 
+            } else {
+                currentBather = name; 
+            }
+
+            updateDisplay();
+            sendToYoom(name, !isExiting);
+        }
+
+        function sendToYoom(name, entering) {
+            const yoomUrl = "https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q"; 
+            const messageText = `${entering ? '【入浴開始】' : '【お風呂あがり】'}\n${name} がお風呂 ${entering ? '入りました🛀' : 'あがりました✨'}`;
+
+            fetch(yoomUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, message: messageText })
+            }).then(() => console.log("送信済み"));
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
