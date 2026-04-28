@@ -107,4 +107,27 @@ function sendToYoom(name, isEntering) {
     })
     .then(() => console.log("通知リクエスト送信完了"))
     .catch(e => console.error("通知送信失敗:", e));
+  function sendToYoom(name, isEntering) {
+    const yoomUrl = "https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q"; 
+    const messageText = `${isEntering ? "【入浴開始】" : "【お風呂あがり】"}\n${name} がお風呂 ${isEntering ? "入りました" : "あがりました"}！ ${isEntering ? "🛀" : "✨"}`;
+
+    // ブラウザのセキュリティ(CORS)を回避するための設定
+    fetch(yoomUrl, {
+        method: 'POST',
+        mode: 'no-cors', // 成功・失敗の判定を捨てて強制送信するモード
+        headers: {
+            'Content-Type': 'text/plain' // あえてJSONと言わずに送るのがコツ
+        },
+        body: JSON.stringify({ 
+            name: name, 
+            message: messageText 
+        })
+    })
+    .then(() => {
+        console.log("信号をYOOMに投げました（no-cors）");
+    })
+    .catch(e => {
+        console.error("送信自体に失敗:", e);
+    });
+}
 }
