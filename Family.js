@@ -9,6 +9,23 @@ const firebaseConfig = {
   measurementId: "G-RQTM7DTE69"
 };
 
+function sendToYoom(name, isEntering) {
+    const yoomUrl = "https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q"; 
+    const messageText = `${name}がお風呂に${isEntering ? "入ったよ🛀" : "あがったよ✨"}`;
+
+    fetch(yoomUrl, {
+        method: 'POST',
+        mode: 'no-cors', // セキュリティチェックを無視して強制送信
+        headers: {
+            'Content-Type': 'text/plain' // JSONではなくプレーンテキストとして送る（これで通ることが多い）
+        },
+        body: JSON.stringify({ message: messageText })
+    }).then(() => {
+        console.log("投げました！");
+    }).catch(e => {
+        console.error("送信エラー:", e);
+    });
+}
 // 初期化
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
