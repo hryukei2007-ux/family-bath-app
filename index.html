@@ -14,9 +14,7 @@
             border: 4px solid transparent; transition: 0.3s;
         }
         
-        /* 入浴中の強調スタイル */
         .card.in-bath { border-color: #e74c3c; background-color: #fff5f5; transform: scale(1.05); }
-        /* ロック（他の人が入浴中）の時のスタイル */
         .card.locked { opacity: 0.5; }
 
         .name { font-size: 1.4em; font-weight: bold; margin-bottom: 5px; }
@@ -29,10 +27,9 @@
             font-size: 1.1em; transition: 0.2s;
         }
 
-        .btn-entry { background-color: #4CAF50; } /* お風呂に入る */
-        .btn-exit { background-color: #e74c3c; }  /* あがった！ */
+        .btn-entry { background-color: #4CAF50; }
+        .btn-exit { background-color: #e74c3c; }
         
-        /* 他人が入浴中に無効化されるボタンの見た目 */
         button:disabled { 
             background-color: #777 !important; 
             cursor: not-allowed; 
@@ -41,129 +38,121 @@
 </head>
 <body>
 
-    <h1>🛁 お風呂管理アプリ</h1>
-    <div id="alert-banner" style="color: #e74c3c; font-weight: bold; margin-bottom: 10px; height: 24px;"></div>
-    
-    <div id="member-list" class="container"></div>
-    const PASS = "1234"; // ← ここを好きなパスワードに変えてください
-    
-    // ページ読み込み時にチェック
-    let userPass = "runasoru";
-    while (userPass !== PASS) {
-        userPass = prompt("家族用パスワードを入力してください");
-        if (userPass === null) {
-            // キャンセルされた場合、画面を真っ白にする
-            document.body.innerHTML = "<h1>アクセス権限がありません</h1>";
-            break;
-        }
-    }
+    <div id="main-content" style="display:none;">
+        <h1>🛁 お風呂管理アプリ</h1>
+        <div id="alert-banner" style="color: #e74c3c; font-weight: bold; margin-bottom: 10px; height: 24px;"></div>
+        <div id="member-list" class="container"></div>
+    </div>
 
     <script>
-        const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
-        
-        // 【重要】ブラウザの保存領域（localStorage）から現在の状態を読み込む
-        // これにより、ブラウザを閉じても「誰が入っているか」を記憶し続けます
-        let currentBather = localStorage.getItem('currentBather') || null;
-        let startTime = localStorage.getItem('startTime') ? parseInt(localStorage.getItem('startTime')) : null;
+        // --- 認証処理 ---
+        const PASS = "runasoru"; 
+        let authenticated = false;
 
-        const memberListDiv = document.getElementById('member-list');
-        const alertBanner = document.getElementById('alert-banner');
-
-        function getDurationText() {
-            if (!startTime) return "";
-            const now = new Date().getTime();
-            const diff = now - startTime;
-            const mins = Math.floor(diff / 1000 / 60);
-            const secs = Math.floor((diff / 1000) % 60);
-            return `入浴中：${mins}分${secs}秒`;
-        }
-
-        function updateDisplay() {
-            memberListDiv.innerHTML = ""; 
-            const anyoneIn = (currentBather !== null); // 誰かが入っているか
-
-            alertBanner.innerText = anyoneIn ? `⚠️ ${currentBather}さんが入浴中です` : "✨ 今ならすぐに入れます";
-
-            familyMembers.forEach(name => {
-                const isInBath = (currentBather === name); 
-                
-                // ロック判定：
-                // 1. 誰も入っていない → 全員ボタンが押せる
-                // 2. 誰かが入っている → その本人（isInBathがtrue）だけが「あがった！」を押せる。他の人はdisabled。
-                const canPress = !anyoneIn || isInBath;
-
-                const card = document.createElement('div');
-                card.className = `card ${isInBath ? 'in-bath' : (anyoneIn ? 'locked' : '')}`;
-                
-                card.innerHTML = `
-                    <div class="name">${name}</div>
-                    <div class="status-text" style="color: ${isInBath ? '#e74c3c' : '#666'}">
-                        ${isInBath ? '🛀 入浴中' : '✨ 空室'}
-                    </div>
-                    <div class="timer-text" id="timer-${name}">
-                        ${isInBath ? getDurationText() : ''}
-                    </div>
-                    <button 
-                        class="${isInBath ? 'btn-exit' : 'btn-entry'}" 
-                        onclick="handleAction('${name}')"
-                        ${canPress ? '' : 'disabled'}
-                    >
-                        ${isInBath ? 'あがった！' : (anyoneIn ? '入浴制限中' : 'お風呂に入る')}
-                    </button>
-                `;
-                memberListDiv.appendChild(card);
-            });
-        }
-
-        function handleAction(name) {
-            // 他の人が入っている時に無理やり実行されないようにガード
-            if (currentBather !== null && currentBather !== name) return;
-
-            const isExiting = (currentBather === name);
-            
-            if (isExiting) {
-                // あがった時の処理：データを消去
-                currentBather = null; 
-                startTime = null;
-                localStorage.removeItem('currentBather');
-                localStorage.removeItem('startTime');
+        while (true) {
+            let userPass = prompt("家族用パスワードを入力してください");
+            if (userPass === PASS) {
+                authenticated = true;
+                break;
+            } else if (userPass === null) {
+                document.body.innerHTML = "<h1>アクセス権限がありません</h1>";
+                break;
             } else {
-                // 入る時の処理：データを保存
-                currentBather = name; 
-                startTime = new Date().getTime();
-                localStorage.setItem('currentBather', name);
-                localStorage.setItem('startTime', startTime);
+                alert("パスワードが違います");
+            }
+        }
+
+        // 認証成功時のみメインコンテンツを表示してアプリを起動
+        if (authenticated) {
+            document.getElementById('main-content').style.display = 'block';
+            startApp();
+        }
+
+        function startApp() {
+            const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
+            let currentBather = localStorage.getItem('currentBather') || null;
+            let startTime = localStorage.getItem('startTime') ? parseInt(localStorage.getItem('startTime')) : null;
+
+            const memberListDiv = document.getElementById('member-list');
+            const alertBanner = document.getElementById('alert-banner');
+
+            function getDurationText() {
+                if (!startTime) return "";
+                const now = new Date().getTime();
+                const diff = now - startTime;
+                const mins = Math.floor(diff / 1000 / 60);
+                const secs = Math.floor((diff / 1000) % 60);
+                return `入浴中：${mins}分${secs}秒`;
+            }
+
+            window.updateDisplay = function() {
+                memberListDiv.innerHTML = ""; 
+                const anyoneIn = (currentBather !== null);
+
+                alertBanner.innerText = anyoneIn ? `⚠️ ${currentBather}さんが入浴中です` : "✨ 今ならすぐに入れます";
+
+                familyMembers.forEach(name => {
+                    const isInBath = (currentBather === name); 
+                    const canPress = !anyoneIn || isInBath;
+                    const card = document.createElement('div');
+                    card.className = `card ${isInBath ? 'in-bath' : (anyoneIn ? 'locked' : '')}`;
+                    
+                    card.innerHTML = `
+                        <div class="name">${name}</div>
+                        <div class="status-text" style="color: ${isInBath ? '#e74c3c' : '#666'}">
+                            ${isInBath ? '🛀 入浴中' : '✨ 空室'}
+                        </div>
+                        <div class="timer-text" id="timer-${name}">
+                            ${isInBath ? getDurationText() : ''}
+                        </div>
+                        <button class="${isInBath ? 'btn-exit' : 'btn-entry'}" onclick="handleAction('${name}')" ${canPress ? '' : 'disabled'}>
+                            ${isInBath ? 'あがった！' : (anyoneIn ? '入浴制限中' : 'お風呂に入る')}
+                        </button>
+                    `;
+                    memberListDiv.appendChild(card);
+                });
+            }
+
+            window.handleAction = function(name) {
+                if (currentBather !== null && currentBather !== name) return;
+                const isExiting = (currentBather === name);
+                
+                if (isExiting) {
+                    currentBather = null; 
+                    startTime = null;
+                    localStorage.removeItem('currentBather');
+                    localStorage.removeItem('startTime');
+                } else {
+                    currentBather = name; 
+                    startTime = new Date().getTime();
+                    localStorage.setItem('currentBather', name);
+                    localStorage.setItem('startTime', startTime);
+                }
+                updateDisplay();
+                sendToYoom(name, !isExiting);
+            }
+
+            setInterval(() => {
+                if (currentBather) {
+                    const timerElement = document.getElementById(`timer-${currentBather}`);
+                    if (timerElement) timerElement.innerText = getDurationText();
+                }
+            }, 1000);
+
+            function sendToYoom(name, entering) {
+                const yoomUrl = "https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q"; 
+                const duration = !entering && startTime ? getDurationText().replace('入浴中：', '') : "";
+                const messageText = `${entering ? '【入浴開始】' : '【お風呂あがり】'}\n${name} がお風呂 ${entering ? '入りました🛀' : 'あがりました✨'}${duration ? '\n入浴時間: ' + duration : ''}`;
+
+                fetch(yoomUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ name: name, message: messageText })
+                });
             }
 
             updateDisplay();
-            sendToYoom(name, !isExiting);
         }
-
-        // 1秒ごとにタイマー表示を更新（誰かが入っている時のみ）
-        setInterval(() => {
-            if (currentBather) {
-                const timerElement = document.getElementById(`timer-${currentBather}`);
-                if (timerElement) {
-                    timerElement.innerText = getDurationText();
-                }
-            }
-        }, 1000);
-
-        function sendToYoom(name, entering) {
-            const yoomUrl = "https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q"; 
-            const duration = !entering && startTime ? getDurationText().replace('入浴中：', '') : "";
-            const messageText = `${entering ? '【入浴開始】' : '【お風呂あがり】'}\n${name} がお風呂 ${entering ? '入りました🛀' : 'あがりました✨'}${duration ? '\n入浴時間: ' + duration : ''}`;
-
-            fetch(yoomUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name, message: messageText })
-            }).then(() => console.log("送信済み"));
-        }
-
-        // 初回表示
-        updateDisplay();
     </script>
 </body>
 </html>
