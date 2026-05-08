@@ -45,6 +45,18 @@
     <div id="alert-banner" style="color: #e74c3c; font-weight: bold; margin-bottom: 10px; height: 24px;"></div>
     
     <div id="member-list" class="container"></div>
+    const PASS = "1234"; // ← ここを好きなパスワードに変えてください
+    
+    // ページ読み込み時にチェック
+    let userPass = "";
+    while (userPass !== PASS) {
+        userPass = prompt("家族用パスワードを入力してください");
+        if (userPass === null) {
+            // キャンセルされた場合、画面を真っ白にする
+            document.body.innerHTML = "<h1>アクセス権限がありません</h1>";
+            break;
+        }
+    }
 
     <script>
         const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
