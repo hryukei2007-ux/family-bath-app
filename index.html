@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お風呂管理</title>
+    <title>家族のお風呂管理</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #eef2f3; padding: 20px; }
         .container { display: flex; flex-direction: column; align-items: center; }
@@ -11,46 +11,49 @@
         .card.in-bath { border-color: #e74c3c; background-color: #fff5f5; }
         .card.locked { opacity: 0.5; }
         .timer-text { font-size: 0.9em; color: #e74c3c; height: 1.2em; font-weight: bold; margin-bottom: 10px; }
-        button { border: none; padding: 15px 25px; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; width: 100%; }
+        button { border: none; padding: 15px 25px; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1em; }
         .btn-entry { background-color: #4CAF50; }
         .btn-exit { background-color: #e74c3c; }
         button:disabled { background-color: #777 !important; }
-        /* ログイン画面用 */
-        #login-area { background: white; padding: 30px; border-radius: 12px; display: inline-block; margin-top: 50px; }
-        input { padding: 10px; font-size: 16px; width: 80%; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; }
+
+        /* パスワード入力エリアの見た目 */
+        #login-screen { background: white; padding: 30px; border-radius: 15px; display: inline-block; margin-top: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        input { padding: 12px; font-size: 16px; width: 200px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="login-area">
-        <h2>🔑 パスワードを入力</h2>
-        <input type="password" id="pass-input" placeholder="runasoru">
-        <button class="btn-entry" onclick="checkPass()">ログイン</button>
+    <div id="login-screen">
+        <h2>🔑 家族用パスワード</h2>
+        <input type="password" id="pass-input" placeholder="パスワードを入力">
+        <br>
+        <button class="btn-entry" onclick="checkAuth()">ログイン</button>
     </div>
 
-    <div id="main-content" style="display:none;">
+    <div id="main-app" style="display:none;">
         <h1>🛁 お風呂管理アプリ</h1>
-        <div id="alert-banner" style="color: #e74c3c; font-weight: bold; margin-bottom: 10px;"></div>
+        <div id="alert-banner" style="color: #e74c3c; font-weight: bold; margin-bottom: 10px; height: 24px;"></div>
         <div id="member-list" class="container"></div>
     </div>
 
     <script>
         const PASS = "runasoru";
         const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
-        let currentBather = localStorage.getItem('currentBather') || null;
-        let startTime = localStorage.getItem('startTime') ? parseInt(localStorage.getItem('startTime')) : null;
 
-        // パスワードチェック関数
-        function checkPass() {
-            const input = document.getElementById('pass-input').value;
-            if (input === PASS) {
-                document.getElementById('login-area').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
+        function checkAuth() {
+            const val = document.getElementById('pass-input').value;
+            if (val === PASS) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
                 updateDisplay();
             } else {
                 alert("パスワードが違います");
             }
         }
+
+        // --- お風呂アプリのメイン機能 ---
+        let currentBather = localStorage.getItem('currentBather') || null;
+        let startTime = localStorage.getItem('startTime') ? parseInt(localStorage.getItem('startTime')) : null;
 
         function getDurationText() {
             if (!startTime) return "";
@@ -65,14 +68,14 @@
             const banner = document.getElementById('alert-banner');
             listDiv.innerHTML = "";
             const anyoneIn = (currentBather !== null);
-            banner.innerText = anyoneIn ? "⚠️ " + currentBather + "さんが入浴中" : "✨ 今なら入れます";
+            banner.innerText = anyoneIn ? "⚠️ " + currentBather + "さんが入浴中です" : "✨ 今ならすぐに入れます";
 
             familyMembers.forEach(name => {
                 const isInBath = (currentBather === name);
                 const canPress = !anyoneIn || isInBath;
                 const card = document.createElement('div');
                 card.className = "card " + (isInBath ? 'in-bath' : (anyoneIn ? 'locked' : ''));
-                card.innerHTML = '<h3>' + name + '</h3>' +
+                card.innerHTML = '<div style="font-size:1.4em; font-weight:bold;">' + name + '</div>' +
                     '<div class="timer-text" id="timer-' + name + '">' + (isInBath ? getDurationText() : '') + '</div>' +
                     '<button class="' + (isInBath ? 'btn-exit' : 'btn-entry') + '" onclick="handleAction(\'' + name + '\')" ' + (canPress ? '' : 'disabled') + '>' +
                     (isInBath ? 'あがった！' : (anyoneIn ? '制限中' : 'お風呂に入る')) + '</button>';
@@ -100,9 +103,8 @@
         }, 1000);
 
         function sendToYoom(name, entering) {
-            const message = (entering ? '入りました🛀' : 'あがりました✨');
             fetch("https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q", { 
-                method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, message: name + "が" + message }) 
+                method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, message: name + (entering ? "が入りました🛀" : "があがりました✨") }) 
             });
         }
     </script>
