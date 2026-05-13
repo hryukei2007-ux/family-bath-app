@@ -23,12 +23,12 @@
 </head>
 <body>
 
-    <div id="login-screen">
-        <h2>🔑 家族用パスワード</h2>
-        <input type="password" id="pass-input" placeholder="パスワードを入力">
-        <br>
-        <button class="btn-entry" onclick="checkAuth()">ログイン</button>
-    </div>
+<div id="login-screen">
+    <h2>🔑 家族用パスワード</h2>
+    <input type="password" id="pass-input" placeholder="パスワードを入力" autocapitalize="none" onkeypress="if(event.key === 'Enter') checkAuth()">
+    <br>
+    <button type="button" class="btn-entry" onclick="checkAuth()">ログイン</button>
+</div>
 
     <div id="main-app" style="display:none;">
         <h1>🛁 お風呂管理アプリ</h1>
@@ -37,76 +37,77 @@
     </div>
 
     <script>
-        const PASS = "runasoru";
-        const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
+    const PASS = "runasoru"; 
+    const familyMembers = ["父ちゃん", "お母さん", "龍慶", "かな"];
 
-        function checkAuth() {
-            const val = document.getElementById('pass-input').value;
-            if (val === PASS) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                updateDisplay();
-            } else {
-                alert("パスワードが違います");
-            }
-        }
-
-        // --- お風呂アプリのメイン機能 ---
-        let currentBather = localStorage.getItem('currentBather') || null;
-        let startTime = localStorage.getItem('startTime') ? parseInt(localStorage.getItem('startTime')) : null;
-
-        function getDurationText() {
-            if (!startTime) return "";
-            const diff = new Date().getTime() - startTime;
-            const mins = Math.floor(diff / 60000);
-            const secs = Math.floor((diff % 60000) / 1000);
-            return "入浴中：" + mins + "分" + secs + "秒";
-        }
-
-        function updateDisplay() {
-            const listDiv = document.getElementById('member-list');
-            const banner = document.getElementById('alert-banner');
-            listDiv.innerHTML = "";
-            const anyoneIn = (currentBather !== null);
-            banner.innerText = anyoneIn ? "⚠️ " + currentBather + "さんが入浴中です" : "✨ 今ならすぐに入れます";
-
-            familyMembers.forEach(name => {
-                const isInBath = (currentBather === name);
-                const canPress = !anyoneIn || isInBath;
-                const card = document.createElement('div');
-                card.className = "card " + (isInBath ? 'in-bath' : (anyoneIn ? 'locked' : ''));
-                card.innerHTML = '<div style="font-size:1.4em; font-weight:bold;">' + name + '</div>' +
-                    '<div class="timer-text" id="timer-' + name + '">' + (isInBath ? getDurationText() : '') + '</div>' +
-                    '<button class="' + (isInBath ? 'btn-exit' : 'btn-entry') + '" onclick="handleAction(\'' + name + '\')" ' + (canPress ? '' : 'disabled') + '>' +
-                    (isInBath ? 'あがった！' : (anyoneIn ? '制限中' : 'お風呂に入る')) + '</button>';
-                listDiv.appendChild(card);
-            });
-        }
-
-        window.handleAction = function(name) {
-            if (currentBather === name) {
-                currentBather = null; startTime = null;
-                localStorage.removeItem('currentBather'); localStorage.removeItem('startTime');
-            } else {
-                currentBather = name; startTime = new Date().getTime();
-                localStorage.setItem('currentBather', name); localStorage.setItem('startTime', startTime);
-            }
+    function checkAuth() {
+        const val = document.getElementById('pass-input').value;
+        if (val === PASS) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
             updateDisplay();
-            sendToYoom(name, currentBather !== null);
-        };
-
-        setInterval(() => {
-            if (currentBather) {
-                const el = document.getElementById("timer-" + currentBather);
-                if (el) el.innerText = getDurationText();
-            }
-        }, 1000);
-
-        function sendToYoom(name, entering) {
-            fetch("https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q", { 
-                method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, message: name + (entering ? "が入りました🛀" : "があがりました✨") }) 
-            });
+        } else {
+            alert("パスワードが違います");
         }
-    </script>
+    }
+
+    // --- ここから下はお風呂アプリのメイン機能（既存のものをそのまま残す） ---
+    let currentBather = localStorage.getItem('currentBather') || null;
+    let startTime = localStorage.getItem('startTime') ? parseInt(localStorage.getItem('startTime')) : null;
+
+    function getDurationText() {
+        if (!startTime) return "";
+        const diff = new Date().getTime() - startTime;
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        return "入浴中：" + mins + "分" + secs + "秒";
+    }
+
+    function updateDisplay() {
+        const listDiv = document.getElementById('member-list');
+        const banner = document.getElementById('alert-banner');
+        if (!listDiv) return;
+        listDiv.innerHTML = "";
+        const anyoneIn = (currentBather !== null);
+        banner.innerText = anyoneIn ? "⚠️ " + currentBather + "さんが入浴中です" : "✨ 今ならすぐに入れます";
+
+        familyMembers.forEach(name => {
+            const isInBath = (currentBather === name);
+            const canPress = !anyoneIn || isInBath;
+            const card = document.createElement('div');
+            card.className = "card " + (isInBath ? 'in-bath' : (anyoneIn ? 'locked' : ''));
+            card.innerHTML = '<div style="font-size:1.4em; font-weight:bold;">' + name + '</div>' +
+                '<div class="timer-text" id="timer-' + name + '">' + (isInBath ? getDurationText() : '') + '</div>' +
+                '<button class="' + (isInBath ? 'btn-exit' : 'btn-entry') + '" onclick="handleAction(\'' + name + '\')" ' + (canPress ? '' : 'disabled') + '>' +
+                (isInBath ? 'あがった！' : (anyoneIn ? '制限中' : 'お風呂に入る')) + '</button>';
+            listDiv.appendChild(card);
+        });
+    }
+
+    window.handleAction = function(name) {
+        if (currentBather === name) {
+            currentBather = null; startTime = null;
+            localStorage.removeItem('currentBather'); localStorage.removeItem('startTime');
+        } else {
+            currentBather = name; startTime = new Date().getTime();
+            localStorage.setItem('currentBather', name); localStorage.setItem('startTime', startTime);
+        }
+        updateDisplay();
+        sendToYoom(name, currentBather !== null);
+    };
+
+    setInterval(() => {
+        if (currentBather) {
+            const el = document.getElementById("timer-" + currentBather);
+            if (el) el.innerText = getDurationText();
+        }
+    }, 1000);
+
+    function sendToYoom(name, entering) {
+        fetch("https://yoom.fun/app_trigger/webhooks/5y9rJucnS_CIGrofcXXp0Q", { 
+            method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, message: name + (entering ? "が入りました🛀" : "があがりました✨") }) 
+        });
+    }
+</script>
 </body>
 </html>
